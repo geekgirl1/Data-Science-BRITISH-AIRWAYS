@@ -1,0 +1,153 @@
+import requests  #The requests library is a simple and elegant HTTP library for Python, designed to make sending HTTP requests easier and more human-friendly. Here’s what it’s typically used for:
+Sending HTTP Requests: You can use requests to send HTTP/1.1 requests, such as GET and POST requests.
+Handling Responses: It allows you to work with the responses from web servers in a straightforward way, enabling you to inspect headers, status codes, and body content.
+
+from bs4 import BeautifulSoup #BeautifulSoup is a library used for parsing HTML and XML documents. It creates a parse tree from page source code that can be used to extract data from HTML, which is particularly useful for web scraping.
+Parsing HTML/XML: It can parse HTML or XML documents and provide methods to navigate and search the parse tree.
+Navigating the Parse Tree: You can search for elements, access attributes, and text, and modify the tree.
+
+import pandas as pd  #pandas is a powerful data manipulation and analysis library for Python. It provides data structures like DataFrames and Series, which are essential for data analysis tasks.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+base_url = "https://www.airlinequality.com/airline-reviews/british-airways"  #is set to the main review page for British Airways.
+pages = 10    #defines the number of pages to scrape.
+page_size = 100  #page_size defines the number of reviews per page.   
+
+reviews = []  #reviews is an empty list to store the collected reviews.
+
+# for i in range(1, pages + 1):
+for i in range(1, pages + 1):
+    
+    print(f"Scraping page {i}")
+    url = f"{base_url}/page/{i}/?sortby=post_date%3ADesc&pagesize={page_size}"   #It includes pagination and sorting parameters to fetch the reviews sorted by the most recent posts.
+    response = requests.get(url)    #Sends an HTTP GET request to the constructed URL to retrieve the HTML content of the page.
+    content = response.content      #Stores the raw HTML content from the response.
+    parsed_content = BeautifulSoup(content, 'html.parser')    #Uses BeautifulSoup to parse the HTML content, creating a parse tree that makes it easier to navigate and search for specific elements.
+    for para in parsed_content.find_all("div", {"class": "text_content"}):     #Finds all div elements with the class text_content, which contain the review text.
+         reviews.append(para.get_text())    # Extracts the text from each found div and appends it to the reviews list.
+    print(f"   ---> {len(reviews)} total reviews")
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+df = pd.DataFrame() #This line initializes an empty Pandas DataFrame named df. A DataFrame is a two-dimensional labeled data structure with columns of potentially different types, similar to a table in a database or an Excel spreadsheet.
+df["reviews"] = reviews #This line creates a new column in the DataFrame called "reviews" and populates it with the data from the reviews list. Each element in the reviews list becomes a row in the "reviews" column of the DataFrame.
+df.head() #This line displays the first five rows of the DataFrame by default. The head() method is useful for quickly inspecting the top entries of the DataFrame to ensure that the data has been loaded correctly.
+
+
+
+Now you have your dataset for this task! The loops above collected 1000 reviews by iterating through the paginated pages on the website. However, if you want to collect more data, try increasing the number of pages!
+
+The next thing that you should do is clean this data to remove any unnecessary text from each of the rows. For example, "✅ Trip Verified" can be removed from each row if it exists, as it's not relevant to what we want to investigate.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+df
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+df.reviews= df.reviews.str.split('|',expand=True)[1]   #The code snippet df.reviews = df.reviews.str.split('|', expand=True)[1] manipulates the "reviews" column of a Pandas DataFrame to split the text in each cell based on a delimiter (|) and then extracts the second part of the split text.
+df
+
+
+Rule-based approach
+
+This is a practical approach to analyzing text without training or using machine learning models. The result of this approach is a set of rules based on which the text is labeled as positive/negative/neutral. These rules are also known as lexicons. Hence, the Rule-based approach is called Lexicon based approach.
+
+Widely used lexicon-based approaches are TextBlob, VADER, SentiWordNet.
+
+Data preprocessing steps:
+
+Cleaning the text
+
+Tokenization
+
+Enrichment – POS tagging
+
+Stopwords removal
+
+Obtaining the stem words
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Step 1: Cleaning the text: The code snippet provided defines a function to clean text data by removing special characters and numerals, leaving only alphabetic characters. This function is then applied to each entry in the "reviews" column of a DataFrame, creating a new column with the cleaned text.
+
+import re  #This imports the regular expression module, which provides tools for matching and manipulating strings based on patterns.
+
+# Define a function to clean the text
+def clean(text):
+# Removes all special characters and numericals leaving the alphabets
+    text = re.sub('[^A-Za-z]+', ' ', str(text))
+    return text
+
+----Function Definition: clean is a function that takes a single argument text.
+Regular Expression Substitution: re.sub('[^A-Za-z]+', ' ', str(text)):
+[^A-Za-z]+: This pattern matches any sequence of characters that are not alphabetic (both uppercase and lowercase).
+re.sub(pattern, replacement, string): Replaces all matches of the pattern in the string with the specified replacement. Here, non-alphabetic characters are replaced with a space ' '.
+str(text): Ensures the input text is converted to a string before applying the regular expression.
+
+# Cleaning the text in the review column
+df['Cleaned Reviews'] = df['reviews'].apply(clean)
+df.head()
+----Creating a New Column: A new column "Cleaned Reviews" is created in the DataFrame df.
+Applying the Function: The apply method is used to apply the clean function to each element in the "reviews" column. This applies the cleaning function to every review.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Step 2: Tokenization
+Tokenization is the process of breaking the text into smaller pieces called Tokens. It can be performed at sentences(sentence tokenization) or word level(word tokenization).
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Step 3: Enrichment – POS tagging
+Parts of Speech (POS) tagging is a process of converting each token into a tuple having the form (word, tag). POS tagging essential to preserve the context of the word and is essential for Lemmatization.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Step 4: Stopwords removal
+Stopwords in English are words that carry very little useful information. We need to remove them as part of text preprocessing. nltk has a list of stopwords of every language.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Step 5: Obtaining the stem words
+
+A stem is a part of a word responsible for its lexical meaning. The two popular techniques of obtaining the root/stem words are Stemming and Lemmatization.
+
+The key difference is Stemming often gives some meaningless root words as it simply chops off some characters in the end. Lemmatization gives meaningful root words, however, it requires POS tags of the words.
+
+NLTK is a leading platform for building Python programs to work with human language data. 
+
+It provides easy-to-use interfaces to over 50 corpora and lexical resources such as WordNet, along 
+with a suite of text processing libraries for classification, tokenization, stemming, tagging, 
+parsing, and semantic reasoning, wrappers for industrial-strength NLP libraries.
+
+import nltk   #Punkt Tokenizer: This tokenizer divides a text into a list of sentences using an unsupervised algorithm to build a model for abbreviation words, collocations, and words that start sentences. The model helps in accurate sentence splitting.
+
+"""This punkt tokenizer divides a text into a list of sentences by using an unsupervised algorithm to build a model for abbreviation words, 
+collocations, and words that start sentences. """
+
+nltk.download('punkt')
+from nltk.tokenize import word_tokenize    #word_tokenize: This function tokenizes a given text into a list of words.
+from nltk import pos_tag                #pos_tag: This function tags each tokenized word with its part of speech (POS), such as noun, verb, adjective, etc.
+nltk.download('stopwords')
+from nltk.corpus import stopwords   #Stopwords: These are common words in a language (like "and", "the", "is") that are often removed from text during preprocessing because they are not useful for certain NLP tasks. The stopwords corpus provides a list of such words for different languages.
+nltk.download('wordnet')
+from nltk.corpus import wordnet   #WordNet: This is a lexical database for the English language. It groups English words into sets of synonyms called synsets, provides short definitions, and records the various semantic relations between these synonym sets. WordNet is widely used for tasks like word sense disambiguation and semantic similarity.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The code snippet provided enhances the natural language processing (NLP) pipeline by adding Part of Speech (POS) tagging to cleaned text data in a DataFrame using NLTK.
+
+nltk.download('omw-1.4')
+nltk.download('averaged_perceptron_tagger')  #Downloads the trained model for part-of-speech tagging. This model is used by NLTK's pos_tag function.
+
+# POS tagger dictionary
+pos_dict = {'J':wordnet.ADJ, 'V':wordnet.VERB, 'N':wordnet.NOUN, 'R':wordnet.ADV}  #Dictionary Setup: Associates Penn Treebank POS tags (J for adjective, V for verb, N for noun, R for adverb) with corresponding WordNet POS tags.
+def token_stop_pos(text): #Function Definition (token_stop_pos): Tokenizes the input text into words. Removes stopwords using NLTK's English stopwords list. Tags each word with its POS using NLTK's pos_tag function and maps the POS tags to WordNet POS tags using pos_dict.
+    tags = pos_tag(word_tokenize(text))
+    #print(tags)
+    newlist = []
+    for word, tag in tags:
+        if word.lower() not in set(stopwords.words('english')):
+          newlist.append(tuple([word, pos_dict.get(tag[0])]))
+          #print(tag[0])
+          #print(pos_dict.get(tag[0]))
+    return newlist 
+
+df['POS tagged'] = df['Cleaned Reviews'].apply(token_stop_pos) #Applying token_stop_pos: Applies the token_stop_pos function to each entry in the "Cleaned Reviews" column of the DataFrame df and stores the tagged tokens in a new column called "POS tagged".
+df.head()
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The code snippet you've provided uses NLTK's WordNetLemmatizer to lemmatize words based on their Part of Speech (POS) tags, and applies this function to each entry in the "POS tagged" column of a DataFrame df.
+from nltk.stem import WordNetLemmatizer #This class is used to perform lemmatization on words. Lemmatization reduces words to their base or root form, considering the context provided by their POS tag.
+wordnet_lemmatizer = WordNetLemmatizer() #Function Explanation (lemmatize):Input: pos_data is a list of tuples containing words and their corresponding POS tags.Lemmatization Process:If pos is not provided (if not pos:), the word is directly appended to lemma_rew without lemmatization.If pos is provided (else), the WordNetLemmatizer is used to lemmatize the word based on its POS tag.Output: Returns a single string (lemma_rew) where each word has been lemmatized and concatenated.For example, "running" would be stemmed to "run".
+def lemmatize(pos_data):
+    lemma_rew = " "
+    for word, pos in pos_data:
+     if not pos:
+        lemma = word
+        lemma_rew = lemma_rew + " " + lemma
+     else:
+        lemma = wordnet_lemmatizer.lemmatize(word, pos=pos)
+        lemma_rew = lemma_rew + " " + lemma
+    return lemma_rew
