@@ -137,7 +137,7 @@ def token_stop_pos(text): #Function Definition (token_stop_pos): Tokenizes the i
 
 df['POS tagged'] = df['Cleaned Reviews'].apply(token_stop_pos) #Applying token_stop_pos: Applies the token_stop_pos function to each entry in the "Cleaned Reviews" column of the DataFrame df and stores the tagged tokens in a new column called "POS tagged".
 df.head()
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 The code snippet you've provided uses NLTK's WordNetLemmatizer to lemmatize words based on their Part of Speech (POS) tags, and applies this function to each entry in the "POS tagged" column of a DataFrame df.
 from nltk.stem import WordNetLemmatizer #This class is used to perform lemmatization on words. Lemmatization reduces words to their base or root form, considering the context provided by their POS tag.
 wordnet_lemmatizer = WordNetLemmatizer() #Function Explanation (lemmatize):Input: pos_data is a list of tuples containing words and their corresponding POS tags.Lemmatization Process:If pos is not provided (if not pos:), the word is directly appended to lemma_rew without lemmatization.If pos is provided (else), the WordNetLemmatizer is used to lemmatize the word based on its POS tag.Output: Returns a single string (lemma_rew) where each word has been lemmatized and concatenated.For example, "running" would be stemmed to "run".
@@ -151,3 +151,66 @@ def lemmatize(pos_data):
         lemma = wordnet_lemmatizer.lemmatize(word, pos=pos)
         lemma_rew = lemma_rew + " " + lemma
     return lemma_rew
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Sentiment Analysis using VADER
+VADER stands for Valence Aware Dictionary and Sentiment Reasoner.
+
+Vader sentiment not only tells if the statement is positive or negative along with the intensity of emotion.
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+analyzer = SentimentIntensityAnalyzer()
+
+
+# function to calculate vader sentiment  SentimentIntensityAnalyzer: This class from the vaderSentiment library is used to perform sentiment analysis. It provides a method (polarity_scores) that calculates the sentiment scores (positive, negative, neutral, and compound) for a given text.
+def vadersentimentanalysis(review):
+    vs = analyzer.polarity_scores(review)
+    return vs['compound']
+
+df['Sentiment'] = df['Lemma'].apply(vadersentimentanalysis)
+
+# function to analyse
+def vader_analysis(compound):  #vadersentimentanalysis Function:Takes a review as input.Uses the polarity_scores method of SentimentIntensityAnalyzer to obtain sentiment scores (vs dictionary).Returns the compound sentiment score (vs['compound']), which represents an overall sentiment ranging from -1 (extremely negative) to 1 (extremely positive).
+    if compound >= 0.5:
+        return 'Positive'
+    elif compound < 0 :
+        return 'Negative'
+    else:
+        return 'Neutral'
+df['Analysis'] = df['Sentiment'].apply(vader_analysis) #Applying vadersentimentanalysis:Applies the vadersentimentanalysis function to each entry in the "Lemma" column of the DataFrame df.Stores the resulting compound sentiment score in a new column called "Sentiment".
+df.head() #Applying vader_analysis:Applies the vader_analysis function to each entry in the "Sentiment" column of the DataFrame df.Stores the resulting sentiment category ('Positive', 'Negative', or 'Neutral') in a new column called "Analysis".
+vader_counts = df['Analysis'].value_counts()
+vader_counts
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Visual Representation
+import matplotlib.pyplot as plt
+%matplotlib inline
+plt.figure(figsize=(15,7))
+
+plt.subplot(1,3,2)
+plt.title("Reviews Analysis")
+plt.pie(vader_counts.values, labels = vader_counts.index, explode = (0, 0, 0.25), autopct='%1.1f%%', shadow=False)
+
+df.to_csv("BA_reviews.csv")
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Wordcloud
+Word Cloud or Tag Clouds is a visualization technique for texts that are natively used for visualizing the tags or keywords from the websites
+from wordcloud import WordCloud, STOPWORDS
+stopwords = set(STOPWORDS)
+
+def show_wordcloud(data):
+    wordcloud = WordCloud(
+        background_color='white',
+        stopwords=stopwords,
+        max_words=100,
+        max_font_size=30,
+        scale=3,
+        random_state=1)
+
+    wordcloud=wordcloud.generate(str(data))
+
+    fig = plt.figure(1, figsize=(12, 12))
+    plt.axis('off')
+
+    plt.imshow(wordcloud)
+    plt.show()
+
+show_wordcloud(df.Lemma)
