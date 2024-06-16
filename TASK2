@@ -1,0 +1,160 @@
+import pandas as pd   #powerful tools for data manipulation
+import numpy as np    #supports numerical operations on array
+import matplotlib.pyplot as plt #matplotlib is the base library for creating visualizations
+import seaborn as sns  #seaborn provides more advanced and aesthetically pleasing statistical plots.
+
+import warnings  #Purpose: The warnings module in Python is used to control the display of warning messages. The filterwarnings function can be used to ignore, display, or modify warnings.
+warnings.filterwarnings("ignore") #This specific command suppresses all warning messages. This is often done to keep the output clean, especially in notebooks or scripts where warnings might be expected but not critical to the execution.
+#The warnings filter is set to ignore warnings. This is often done in data analysis scripts to avoid cluttering the output with warning messages, especially if the warnings are non-critical and can be safely ignored.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+data = 'customer_booking.csv'
+
+
+import chardet
+import os
+
+file_path = r'C:\Users\GANYA\Downloads\customer_booking.csv'
+
+# Check if the file exists
+if not os.path.exists(file_path):
+    print(f"File not found: {file_path}")
+else:
+    # Open the file and detect encoding
+    with open(file_path, 'rb') as rawdata:
+        result = chardet.detect(rawdata.read(100000))
+    print(result)
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+import os
+import pandas as pd
+
+# Set the correct file path
+data = r'C:\Users\GANYA\Downloads\customer_booking.csv'
+
+# Print the file path and current working directory for verification
+print("Data Path:", data)
+print("Current Working Directory:", os.getcwd())
+
+# Check if the file exists
+if not os.path.exists(data):
+    print(f"File not found: {data}")
+else:
+    # Read the CSV file
+    df = pd.read_csv(data, encoding='ISO-8859-1')
+    print(df.head()) or df.head()
+df.dtypes
+df.shape
+df.isnull().sum()
+df.booking_complete.value_counts()
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+X= df.drop('booking_complete',axis=1)
+y= df.booking_complete         
+
+#changing object dtype to int dtype
+for colname in X.select_dtypes("object"):
+    X[colname], _ = X[colname].factorize()
+from sklearn.feature_selection import mutual_info_classif
+
+mi_scores = mutual_info_classif(X, y)
+mi_scores = pd.Series(mi_scores, name="MI Scores", index=X.columns)
+mi_scores = mi_scores.sort_values(ascending=False)
+
+mi_scores # show a few features with their MI scores
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def plot_mi_scores(scores):
+    scores = scores.sort_values(ascending=True)
+    width = np.arange(len(scores))
+    ticks = list(scores.index)
+    plt.barh(width, scores)
+    plt.yticks(width, ticks)
+    plt.title("Mutual Information Scores")
+
+
+plt.figure(dpi=100, figsize=(8, 5))
+plot_mi_scores(mi_scores)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+import seaborn as sns
+import pandas as pd
+
+# Example DataFrame
+data = {
+    'route': ['A', 'B', 'C', 'D'],
+    'price': [100, 150, 200, 250]  # Assuming 'price' is the column you want for the y-axis
+}
+df = pd.DataFrame(data)
+
+# Plot using sns.jointplot
+sns.jointplot(data=df, x='route', y='price')
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#test train split
+
+from sklearn.model_selection import train_test_split
+
+# dataset split
+# creating a function for dataset split
+def dataset(X,y):
+    train_full_X, val_X, train_full_y, val_y = train_test_split(X, y,test_size=0.2,random_state = 0)
+
+# Use the same function above for the validation set
+    train_X, test_X, train_y, test_y = train_test_split(train_full_X, train_full_y, test_size=0.25,random_state = 0)
+    return (train_X, val_X, train_y, val_y)
+
+from sklearn.preprocessing import MinMaxScaler
+
+def scale(X):
+    scaler = MinMaxScaler()
+    scaler.fit(X)
+    return X
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#only for few features:
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import roc_auc_score, accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+
+# Assuming df is your DataFrame
+# Ensure df is defined and contains the necessary columns
+
+# List of features to use
+features = ['route', 'booking_origin', 'flight_duration', 'wants_extra_baggage', 'length_of_stay', 'num_passengers']
+
+# Separate the features and target variable
+X = df[features]
+y = df['booking_complete']
+
+# One-hot encode categorical features
+X = pd.get_dummies(X, columns=['route', 'booking_origin'])
+
+# Scale numerical features
+scaler = StandardScaler()
+X[['flight_duration', 'length_of_stay', 'num_passengers']] = scaler.fit_transform(X[['flight_duration', 'length_of_stay', 'num_passengers']])
+
+# Split the data into training and validation sets
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=1)
+
+# Initialize and train the RandomForestClassifier
+forest_model = RandomForestClassifier(random_state=1)
+forest_model.fit(X_train, y_train)
+
+# Make predictions on the validation set
+preds = forest_model.predict(X_val)
+
+# Calculate and print accuracy and AUC score
+print('ACCURACY: ', accuracy_score(y_val, preds) * 100)
+print('AUC score: ', roc_auc_score(y_val, preds))
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#for all features:
+X= df.drop('booking_complete',axis=1)
+#one hot encoding
+X = pd.get_dummies(X)
+X= scale(X)
+y= df.booking_complete       
+
+X_train,X_val,y_train,y_val= dataset(X,y)
+
+forest_model= RandomForestClassifier(random_state=1)
+forest_model.fit(X_train, y_train)
+preds= forest_model.predict(X_val)
+
+print('ACCURACY: ',accuracy_score(y_val,preds)*100)
+print('AUC score: ',roc_auc_score(y_val,preds))
